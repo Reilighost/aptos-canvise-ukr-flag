@@ -9,7 +9,6 @@ NODE_URL = getenv("APTOS_NODE_URL", 'https://rpc.ankr.com/premium-http/aptos/730
 CANVAS_WIDTH = 999  # Canvas width
 COLORS = {"blue": (500, 666, "0x02"), "yellow": (330, 500, "0x04")}  # Color data
 PXL_NUM = random.randint(25, 90)  # Number of pixels
-TIMEOUT = 300  # Timeout value in seconds
 
 REST_CLIENT = RestClient(NODE_URL)  # Initialize REST Client
 as_rest = RS(NODE_URL)  # Initialize Async REST Client
@@ -62,13 +61,15 @@ async def generate_block_color_payload(num_pixels):
         x_coords.append(x); y_coords.append(y)  # Append to list
     return chosen_color, x_coords, y_coords  # Return payload data
 
+
 async def transfer_async(client, sender, num_pixels):
     chosen_color, x_coords, y_coords = await generate_block_color_payload(num_pixels)  # Generate payload
     print(f"X: {x_coords}, Y: {y_coords}")
     _, _, base_color_code = COLORS[chosen_color]
     payload_color = f"{base_color_code + (base_color_code[2:] * (num_pixels - 1))}"  # Generate color payload
     print(f"Payload Color: {payload_color}")
-    payload = {
+
+    first_payload = {
         "type": "entry_function_payload",
         "function": "0x915efe6647e0440f927d46e39bcb5eb040a7e567e1756e002073bc6e26f2cd23::canvas_token::draw",
         "type_arguments": [],
@@ -77,7 +78,25 @@ async def transfer_async(client, sender, num_pixels):
             x_coords, y_coords, payload_color
         ],
     }
-    return await asyncio.get_event_loop().run_in_executor(executor, lambda: RestClient.submit_transaction(client, sender, payload))  # Submit transaction
 
+    first_result = await asyncio.get_event_loop().run_in_executor(executor,
+                                                                  lambda: RestClient.submit_transaction(client, sender,
+                                                                                                        first_payload))  # Submit first transaction
+
+    if first_result:  # Check for success of first transaction
+        second_payload = {
+            "type": "entry_function_payload",
+            "function": "0x3::token::opt_in_direct_transfer",
+            "type_arguments": [],
+            "arguments": [True]
+        }
+
+        second_result = await asyncio.get_event_loop().run_in_executor(executor,
+                                                                       lambda: RestClient.submit_transaction(client,
+                                                                                                             sender,
+                                                                                                             second_payload))  # Submit second transaction
+        return second_result
+
+    return first_result
 if __name__ == "__main__":
     asyncio.run(main())  # Run main function
