@@ -5,7 +5,7 @@ from aptos_sdk.client import RestClient
 from aptos_sdk.async_client import RestClient as RS
 from concurrent.futures import ThreadPoolExecutor
 
-NODE_URL = getenv("APTOS_NODE_URL", 'https://rpc.ankr.com/premium-http/aptos/730edb57ff917b8d398da10275b3d52de72e0637e2f73d949667d1eb9dc155b8/v1')
+NODE_URL = getenv("APTOS_NODE_URL", "https://fullnode.mainnet.aptoslabs.com/v1")
 CANVAS_WIDTH = 999  # Canvas width
 COLORS = {"blue": (500, 666, "0x02"), "yellow": (330, 500, "0x04")}  # Color data
 PXL_NUM = random.randint(25, 90)  # Number of pixels
